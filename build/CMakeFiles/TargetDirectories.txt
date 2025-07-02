@@ -1,0 +1,3 @@
+/Users/nicbov/parallel_algos/build/CMakeFiles/test_sum.dir
+/Users/nicbov/parallel_algos/build/CMakeFiles/edit_cache.dir
+/Users/nicbov/parallel_algos/build/CMakeFiles/rebuild_cache.dir
