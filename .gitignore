@@ -1,0 +1,17 @@
+# Ignore build directory
+build/
+
+# Ignore OS files (macOS)
+.DS_Store
+
+# Ignore editor files
+.vscode/
+*.swp
+*.swo
+
+# Ignore compiled object files and binaries (just in case)
+*.o
+*.a
+*.exe
+*.out
+
