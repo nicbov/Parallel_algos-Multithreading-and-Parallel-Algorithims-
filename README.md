@@ -64,9 +64,9 @@ Example:
 Expected Output Format
 The programs print timing and speedup results in a markdown-friendly table format:
 
-## 📊 Performance Results
+## Performance Results
 
-### 🧮 Array Sum (100000000 integers)
+### Array Sum (100000000 integers)
 
 | Threads | Time (ms) | Speedup |
 |---------|-----------|---------|
@@ -74,7 +74,7 @@ The programs print timing and speedup results in a markdown-friendly table forma
 | 2       | 70.000    | 1.85x   |
 | 4       | 40.000    | 3.25x   |
 
-### 🧮 Matrix Sort (1000 x 1000 integers)
+### Matrix Sort (1000 x 1000 integers)
 
 | Threads | Time (ms) | Speedup |
 |---------|-----------|---------|
@@ -83,14 +83,11 @@ The programs print timing and speedup results in a markdown-friendly table forma
 | 4       | 15.000    | 4.00x   |
 
 What I Learned:
-Writing clean, modular C code for multithreaded computation.
 
+Writing clean C code for multithreaded computation.
 Using pthreads to manage threads safely and efficiently.
-
 Benchmarking and profiling for performance measurement.
-
 Using CMake and Makefiles for cross-platform builds and easy compilation.
-
 Handling large data sets and ensuring correctness with parallel algorithm.
 
 License
