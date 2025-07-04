@@ -3,44 +3,57 @@
 #include <time.h>
 #include "sum.h"
 
+double time_in_ms(clock_t start, clock_t end) {
+    return ((double)(end - start)) / CLOCKS_PER_SEC * 1000.0;
+}
+
 int main(int argc, char* argv[]) {
-    int size = 100000000; // default size, can increase or set from cmd
-    int num_threads = 4;  // default threads
+    int size = 100000000; // Default array size
+    int thread_counts[] = {1, 2, 4, 8};
+    int num_configs = sizeof(thread_counts) / sizeof(thread_counts[0]);
 
-    if (argc > 1) size = atoi(argv[1]);
-    if (argc > 2) num_threads = atoi(argv[2]);
+    if (argc > 1) {
+        int parsed = atoi(argv[1]);
+        if (parsed > 0) size = parsed;
+    }
 
-    int *data = malloc(sizeof(int) * size);
+    int* data = malloc(sizeof(int) * size);
     if (!data) {
-        printf("Failed to allocate memory\n");
+        fprintf(stderr, "❌ Memory allocation failed.\n");
         return 1;
     }
 
-    // Initialize the array with all 1s, so sum = size
     for (int i = 0; i < size; i++) {
-        data[i] = 1;
+        data[i] = 1; // Makes the correct sum equal to the array size
     }
 
-    clock_t start, end;
-    double time_taken;
-
-    start = clock();
+    // Run and time sequential sum
+    clock_t start = clock();
     long seq_sum = sequential_sum(data, size);
-    end = clock();
-    time_taken = ((double)(end - start)) / CLOCKS_PER_SEC * 1000; // ms
-    printf("Sequential sum: %ld, Time: %.3f ms\n", seq_sum, time_taken);
+    clock_t end = clock();
+    double seq_time = time_in_ms(start, end);
 
-    start = clock();
-    long threaded_sum_result = threaded_sum(data, size, num_threads);
-    end = clock();
-    time_taken = ((double)(end - start)) / CLOCKS_PER_SEC * 1000;
-    printf("Threaded sum (%d threads): %ld, Time: %.3f ms\n", num_threads, threaded_sum_result, time_taken);
+    // Output results in Markdown format
+    printf("## 📊 Performance Results\n\n");
+    printf("### ➕ Array Summation (%d integers)\n\n", size);
+    printf("| Threads | Time (ms) | Speedup |\n");
+    printf("|---------|-----------|---------|\n");
 
-    if (seq_sum == threaded_sum_result) {
-        printf("Success: Both sums match!\n");
-        printf("Speedup: %.2fx\n", (double)seq_sum / time_taken);
-    } else {
-        printf("Error: Sums do not match!\n");
+    for (int i = 0; i < num_configs; i++) {
+        int threads = thread_counts[i];
+
+        start = clock();
+        long par_sum = threaded_sum(data, size, threads);
+        end = clock();
+        double par_time = time_in_ms(start, end);
+
+        if (par_sum != seq_sum) {
+            printf("| %-7d |   ERROR   | MISMATCH |\n", threads);
+            continue;
+        }
+
+        double speedup = seq_time / par_time;
+        printf("| %-7d | %-9.3f | %.2fx   |\n", threads, par_time, speedup);
     }
 
     free(data);

@@ -23,79 +23,85 @@ void free_matrix(int** matrix, int rows) {
 
 // Helper: fill matrix with random values
 void fill_matrix_random(int** matrix, int rows, int cols) {
-    for (int i = 0; i < rows; i++) {
-        for (int j = 0; j < cols; j++) {
+    for (int i = 0; i < rows; i++)
+        for (int j = 0; j < cols; j++)
             matrix[i][j] = rand() % 1000;
-        }
-    }
-}
-
-// Helper: copy matrix
-int** copy_matrix(int** matrix, int rows, int cols) {
-    int** copy = allocate_matrix(rows, cols);
-    for (int i = 0; i < rows; i++) {
-        memcpy(copy[i], matrix[i], cols * sizeof(int));
-    }
-    return copy;
 }
 
 // Helper: check if two matrices are equal
 int matrices_equal(int** m1, int** m2, int rows, int cols) {
-    for (int i = 0; i < rows; i++) {
-        for (int j = 0; j < cols; j++) {
+    for (int i = 0; i < rows; i++)
+        for (int j = 0; j < cols; j++)
             if (m1[i][j] != m2[i][j]) return 0;
-        }
-    }
     return 1;
 }
 
+// Timer utility
 double timediff_ms(struct timespec start, struct timespec end) {
     return (end.tv_sec - start.tv_sec) * 1000.0 +
            (end.tv_nsec - start.tv_nsec) / 1e6;
 }
 
+// Main
 int main(int argc, char* argv[]) {
     int rows = 1000;
     int cols = 1000;
-    int num_threads = 4;
+    int thread_configs[] = {1, 2, 4, 8};
+    int num_configs = sizeof(thread_configs) / sizeof(thread_configs[0]);
 
-    if (argc >= 2) rows = atoi(argv[1]);
-    if (argc >= 3) cols = atoi(argv[2]);
-    if (argc >= 4) num_threads = atoi(argv[3]);
+    if (argc >= 3) {
+        rows = atoi(argv[1]);
+        cols = atoi(argv[2]);
+    }
 
     srand((unsigned)time(NULL));
 
-    int** matrix = allocate_matrix(rows, cols);
-    fill_matrix_random(matrix, rows, cols);
+    // Generate original matrix
+    int** original = allocate_matrix(rows, cols);
+    fill_matrix_random(original, rows, cols);
 
-    int** seq_copy = copy_matrix(matrix, rows, cols);
-    int** par_copy = copy_matrix(matrix, rows, cols);
+    // Create sequential copy
+    int** seq_matrix = allocate_matrix(rows, cols);
+    for (int i = 0; i < rows; i++)
+        memcpy(seq_matrix[i], original[i], cols * sizeof(int));
 
     struct timespec start, end;
-
     clock_gettime(CLOCK_MONOTONIC, &start);
-    sequential_parsort(seq_copy, rows, cols);
+    sequential_parsort(seq_matrix, rows, cols);
     clock_gettime(CLOCK_MONOTONIC, &end);
     double seq_time = timediff_ms(start, end);
 
-    clock_gettime(CLOCK_MONOTONIC, &start);
-    parallel_parsort(par_copy, rows, cols, num_threads);
-    clock_gettime(CLOCK_MONOTONIC, &end);
-    double par_time = timediff_ms(start, end);
+    printf("## 📊 Performance Results\n\n");
+    printf("### 🧮 Matrix Sort (%d x %d integers)\n\n", rows, cols);
+    printf("| Threads | Time (ms) | Speedup |\n");
+    printf("|---------|-----------|---------|\n");
 
-    printf("Sequential sort time: %.3f ms\n", seq_time);
-    printf("Parallel sort time (%d threads): %.3f ms\n", num_threads, par_time);
+    for (int i = 0; i < num_configs; i++) {
+        int threads = thread_configs[i];
 
-    if (matrices_equal(seq_copy, par_copy, rows, cols)) {
-        printf("Success: Matrices match!\n");
-        printf("Speedup: %.2fx\n", seq_time / par_time);
-    } else {
-        printf("Error: Matrices do not match!\n");
+        // Copy original into parallel matrix
+        int** par_matrix = allocate_matrix(rows, cols);
+        for (int j = 0; j < rows; j++)
+            memcpy(par_matrix[j], original[j], cols * sizeof(int));
+
+        clock_gettime(CLOCK_MONOTONIC, &start);
+        parallel_parsort(par_matrix, rows, cols, threads);
+        clock_gettime(CLOCK_MONOTONIC, &end);
+        double par_time = timediff_ms(start, end);
+
+        if (!matrices_equal(seq_matrix, par_matrix, rows, cols)) {
+            printf("Error: Output mismatch with %d threads\n", threads);
+        } else {
+            double speedup = seq_time / par_time;
+            printf("| %-7d | %-9.3f | %.2fx   |\n", threads, par_time, speedup);
+        }
+
+        free_matrix(par_matrix, rows);
     }
 
-    free_matrix(matrix, rows);
-    free_matrix(seq_copy, rows);
-    free_matrix(par_copy, rows);
+    // Cleanup
+    free_matrix(original, rows);
+    free_matrix(seq_matrix, rows);
 
     return 0;
 }
